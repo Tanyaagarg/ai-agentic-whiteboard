@@ -4,15 +4,17 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import React from "react";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return(
+  return (
     <SidebarProvider>
-        <AppSidebar/>
-        <div className="flex flex-1 flex-col">
-            <AppHeader/>
-            { children }</div>
+      <AppSidebar />
+      <div className="flex flex-1 flex-col">
+        <AppHeader />
+        <div className="p-5">
+            {children}
+        </div>
+      </div>
     </SidebarProvider>
-    
-  ) 
+  );
 }
 
 export default DashboardLayout;

@@ -1,10 +1,15 @@
+import ProjectList from '@/components/custom/dashboard/ProjectList'
+import WelcomeBanner from '@/components/custom/dashboard/WelcomeBanner'
 import { UserButton } from '@clerk/nextjs'
 import React from 'react'
 
 function DashboardPage() {
   return (
     <div>
-      <UserButton/>
+        <WelcomeBanner/>
+        
+        <ProjectList/>
+
     </div>
   )
 }
