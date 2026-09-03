@@ -21,6 +21,7 @@ import {
   Image as ImageIcon,
   Eraser,
 } from "lucide-react";
+import FloatingProperties from "./FloatingProperties";
 
 const tools = [
   { name: "selection", icon: MousePointer2, color: "text-blue-600" },
@@ -42,8 +43,9 @@ function Whiteboard() {
   const saveTimeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { projectid } = useParams<{ projectid: string }>();
   const [activeTool, setActiveTool] = useState("selection");
+  const [selectedElement, setSelectedElement] = useState<any>(null);
+  const [canvasState, setCanvasState] = useState<any>(null);
 
-  // Clear any pending save when the component unmounts
   useEffect(() => {
     return () => {
       if (saveTimeRef.current) clearTimeout(saveTimeRef.current);
@@ -73,8 +75,23 @@ function Whiteboard() {
     appState: any,
     files: any,
   ) => {
-    // Keep the toolbar highlight in sync with keyboard shortcuts
-    // and Excalidraw's auto-revert to selection after drawing
+    setCanvasState(appState);
+
+    // Only ids with a truthy value are actually selected —
+    // Excalidraw leaves deselected ids in the map set to false
+    const selectedIds = Object.keys(appState.selectedElementIds || {}).filter(
+      (id) => appState.selectedElementIds[id]
+    );
+
+    if (selectedIds.length === 1) {
+      const element = elements.find(
+        (el) => el.id === selectedIds[0] && !el.isDeleted
+      );
+      setSelectedElement(element ?? null);
+    } else {
+      setSelectedElement(null);
+    }
+
     setActiveTool(appState.activeTool.type);
 
     if (saveTimeRef.current) {
@@ -89,10 +106,32 @@ function Whiteboard() {
 
   const changeTool = (tool: string) => {
     if (!excalidrawAPI) return;
-
     setActiveTool(tool);
     excalidrawAPI.setActiveTool({ type: tool as any });
   };
+
+  const getFloatingPosition = () => {
+    if (!selectedElement || !canvasState) {
+      return { left: 0, top: 0 };
+    }
+
+    const zoom = canvasState.zoom?.value ?? 1;
+    const scrollX = canvasState.scrollX ?? 0;
+    const scrollY = canvasState.scrollY ?? 0;
+
+    const width = Math.abs(selectedElement.width ?? 0);
+    const centerX = selectedElement.x + width / 2;
+
+    const screenX = (centerX + scrollX) * zoom;
+    const screenY = (selectedElement.y + scrollY) * zoom;
+
+    return {
+      left: Math.max(100, screenX),
+      top: Math.max(10, screenY - 60),
+    };
+  };
+
+  const floatingPosition = getFloatingPosition();
 
   return (
     <div className="relative" style={{ height: "90vh" }}>
@@ -100,6 +139,7 @@ function Whiteboard() {
         excalidrawAPI={(api) => setExcalidrawAPI(api)}
         onChange={handleCanvasChange}
       />
+
       <div className="absolute left-4 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-0.5 rounded-xl border bg-white p-1 shadow-lg">
         {tools.map((tool) => {
           const Icon = tool.icon;
@@ -117,6 +157,12 @@ function Whiteboard() {
           );
         })}
       </div>
+
+      <FloatingProperties
+        selectedElement={selectedElement}
+        position={floatingPosition}
+        excalidrawAPI={excalidrawAPI}
+      />
     </div>
   );
 }
