@@ -6,15 +6,22 @@ export async function POST(req: NextRequest) {
   const { projectName, projectId } = await req.json();
   const user = await currentUser();
 
-  if (!projectId || !projectName) {
-    return NextResponse.json({ error: 'Project Information missing' });
+  if (!user?.primaryEmailAddress?.emailAddress) {
+    return NextResponse.json({ error: "Project Information missing" });
   }
 
-  const result = await db.insert(projects).values({
-    projectId: projectId,
-    projectName: projectName ?? '',
-    userEmail: user?.primaryEmailAddress?.emailAddress ?? ''
-  }).returning();
+  if (!projectId || !projectName) {
+    return NextResponse.json({ error: "Project Information missing" });
+  }
+
+  const result = await db
+    .insert(projects)
+    .values({
+      projectId: projectId,
+      projectName: projectName ?? "",
+      userEmail: user?.primaryEmailAddress?.emailAddress ?? "",
+    })
+    .returning();
 
   return NextResponse.json(result[0]);
 }
