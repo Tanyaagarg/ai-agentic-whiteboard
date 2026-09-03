@@ -22,6 +22,7 @@ import {
 import { usePathname } from "next/navigation";
 import { Progress } from "@/components/ui/progress";
 import { useUser } from "@clerk/nextjs";
+import CreateNewBoardDialog from "./CreateNewBoardDialog";
 
 export function AppSidebar() {
   const path = usePathname();
@@ -39,7 +40,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup className="px-3">
           <Button className="w-full rounded-xl bg-primary font-semibold text-primary-foreground shadow-card hover:bg-primary/90">
-            + Create New Board
+            <CreateNewBoardDialog/>
           </Button>
         </SidebarGroup>
         <SidebarGroup>
@@ -82,7 +83,7 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <Button className="w-full rounded-xl bg-primary font-semibold text-primary-foreground shadow-card hover:bg-primary/90">
-          + Create New Board
+          <CreateNewBoardDialog/>
         </Button>
         <div className="p-4 my-3 border rounded-md">
             <h2 className="text-sm flex justify-between mb-1">
