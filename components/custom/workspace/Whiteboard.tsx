@@ -22,6 +22,7 @@ import {
   Eraser,
 } from "lucide-react";
 import FloatingProperties from "./FloatingProperties";
+import ToolProperties from "./ToolProperties";
 
 const tools = [
   { name: "selection", icon: MousePointer2, color: "text-blue-600" },
@@ -80,12 +81,12 @@ function Whiteboard() {
     // Only ids with a truthy value are actually selected —
     // Excalidraw leaves deselected ids in the map set to false
     const selectedIds = Object.keys(appState.selectedElementIds || {}).filter(
-      (id) => appState.selectedElementIds[id]
+      (id) => appState.selectedElementIds[id],
     );
 
     if (selectedIds.length === 1) {
       const element = elements.find(
-        (el) => el.id === selectedIds[0] && !el.isDeleted
+        (el) => el.id === selectedIds[0] && !el.isDeleted,
       );
       setSelectedElement(element ?? null);
     } else {
@@ -109,6 +110,41 @@ function Whiteboard() {
     setActiveTool(tool);
     excalidrawAPI.setActiveTool({ type: tool as any });
   };
+
+  /** Patch a single property on the currently selected element */
+  const handlePropertyChange = (property: string, value: any) => {
+    if (!excalidrawAPI || !selectedElement) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+
+    const updatedElements = elements.map((el: any) => {
+      if (el.id !== selectedElement.id) {
+        return el;
+      }
+
+      return {
+        ...el,
+        [property]: value,
+        version: el.version + 1,
+        versionNonce: Math.floor(Math.random() * 1000000),
+        updated: Date.now(),
+      };
+    });
+
+    excalidrawAPI.updateScene({ elements: updatedElements });
+  };
+
+ /** Set defaults for the NEXT element drawn with the active tool */
+const handleToolPropertyChange = (property: string, value: any) => {
+  if (!excalidrawAPI) return;
+
+  excalidrawAPI.updateScene({
+    appState: {
+      ...excalidrawAPI.getAppState(),
+      [property]: value,
+    },
+  });
+};
 
   const getFloatingPosition = () => {
     if (!selectedElement || !canvasState) {
@@ -140,6 +176,7 @@ function Whiteboard() {
         onChange={handleCanvasChange}
       />
 
+      {/* LEFT TOOLBAR */}
       <div className="absolute left-4 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-0.5 rounded-xl border bg-white p-1 shadow-lg">
         {tools.map((tool) => {
           const Icon = tool.icon;
@@ -158,10 +195,21 @@ function Whiteboard() {
         })}
       </div>
 
+      {/* TOOL DEFAULTS — shown while a drawing tool is active */}
+      {!selectedElement && (
+        <ToolProperties
+          activeTool={activeTool}
+          appState={canvasState}
+          onToolPropertyChange={handleToolPropertyChange}
+        />
+      )}
+
+      {/* SELECTED ELEMENT PROPERTIES */}
       <FloatingProperties
         selectedElement={selectedElement}
         position={floatingPosition}
         excalidrawAPI={excalidrawAPI}
+        onPropertyChange={handlePropertyChange}
       />
     </div>
   );
