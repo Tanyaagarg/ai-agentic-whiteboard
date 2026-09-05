@@ -36,15 +36,3 @@ export const WhiteboardData = pgTable('whiteboardData', {
   // rename a column on your existing Neon database.
   updatedAt: timestamp("created_at").defaultNow().notNull(),
 })
-
-export const posts = pgTable("posts", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  content: text("content"),
-  authorId: serial("author_id").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;

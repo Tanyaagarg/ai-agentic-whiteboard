@@ -39,7 +39,7 @@ async function callGemini(body: any, attempts = 3) {
         }
 
         const wait = 1000 * 2 ** i;
-        console.log(`gemini busy (${res.status}), retrying in ${wait}ms`);
+        console.warn(`gemini busy (${res.status}), retrying in ${wait}ms`);
         await sleep(wait);
     }
 
@@ -217,8 +217,6 @@ Return JSON only. No markdown, no commentary.`;
             }
         };
 
-        console.log("calling", MODEL);
-
         const countOf = (r: any) => r?.diagramResult?.elements?.length ?? 0;
 
         let result = await attempt(finalPrompt);
@@ -254,12 +252,6 @@ diagram described, each with its own coordinates.`
         }
 
         const { diagramResult, rawPreview } = result;
-
-        console.log(
-            "elements:", diagramResult?.elements?.length,
-            "connections:", diagramResult?.connections?.length
-        );
-        console.log("raw:", JSON.stringify(diagramResult).slice(0, 1500));
 
         return Response.json({
             success: true,

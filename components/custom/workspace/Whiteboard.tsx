@@ -150,7 +150,6 @@ function Whiteboard({ onApiReady }: Props) {
         previewImage,
       });
 
-      console.log("Autosaved:", result.data);
     } catch (error) {
       console.error("Autosave failed:", error);
       toast.add({ title: "Save failed", type: "error" });

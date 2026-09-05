@@ -46,8 +46,8 @@ function Workspace() {
       const result = await axios.get("/api/projects?projectId=" + projectid);
       const board = result.data;
 
+      // a project with nothing drawn yet is not an error, just nothing to load
       if (!board || board.error) {
-        console.log("No saved whiteboard for this project", board?.error ?? "");
         return;
       }
 
@@ -70,14 +70,13 @@ function Workspace() {
     if (!api) return;
 
     try {
-      const result = await axios.post("/api/whiteboard", {
+      await axios.post("/api/whiteboard", {
         projectId: projectid,
         elements: api.getSceneElements(),
         appState: api.getAppState(),
         files: api.getFiles(),
       });
 
-      console.log("Saved:", result.data);
     } catch (error) {
       console.error("Save failed:", error);
     }

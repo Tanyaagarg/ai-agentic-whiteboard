@@ -67,7 +67,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <Image src="/logo.svg" alt="logo" width={40} height={40} />
+          <Image src="/logo.svg" alt="logo" width={45} height={30} />
           <h2 className="text-lg font-semibold">WhizBoard</h2>
         </div>
       </SidebarHeader>

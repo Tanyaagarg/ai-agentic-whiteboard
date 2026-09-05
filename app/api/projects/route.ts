@@ -199,7 +199,11 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (!projectId || (action !== "restore" && action !== "rename")) {
-    return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
+    console.warn("PATCH rejected — bad action:", { projectId, action });
+    return NextResponse.json(
+      { error: `Unsupported action: ${JSON.stringify(action)}` },
+      { status: 400 },
+    );
   }
 
   const project = await findOwnedProject(projectId, email);
@@ -214,6 +218,10 @@ export async function PATCH(req: NextRequest) {
     const name = typeof projectName === "string" ? projectName.trim() : "";
 
     if (!name || name.length > MAX_NAME_LENGTH) {
+      console.warn("PATCH rejected — bad name:", {
+        projectName,
+        length: name.length,
+      });
       return NextResponse.json(
         { error: `Name must be 1-${MAX_NAME_LENGTH} characters` },
         { status: 400 },

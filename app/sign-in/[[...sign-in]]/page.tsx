@@ -1,9 +1,12 @@
+import AuthLayout from "@/components/custom/auth/AuthLayout";
 import { SignIn } from "@clerk/nextjs";
 
 export default function SignInPage() {
   return (
-    <main style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#09090b' }}>
+    <AuthLayout>
+      {/* Clerk's card carries its own "Don't have an account? Sign up" link,
+          so there is no second footer here. */}
       <SignIn />
-    </main>
+    </AuthLayout>
   );
 }

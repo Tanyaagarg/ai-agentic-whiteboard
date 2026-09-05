@@ -715,12 +715,6 @@ export default function AIFloatingSidebar({ excalidrawApi, onClose }: Props) {
       animate: true,
     });
 
-    console.log("rendered", {
-      fromModel: aiElements.length,
-      connections: connections.length,
-      onCanvas: newElements.length,
-    });
-
     if (aiElements.length < 5) {
       return `Only ${aiElements.length} element(s) came back. Raw: ${
         payload?.rawPreview ?? JSON.stringify(payload).slice(0, 400)
@@ -747,8 +741,6 @@ export default function AIFloatingSidebar({ excalidrawApi, onClose }: Props) {
         // without this a hung request spins forever with no feedback
         { timeout: 240000 }
       );
-
-      console.log("AI response", result.data);
 
       try {
         setStatus(renderAIDiagram(result.data));

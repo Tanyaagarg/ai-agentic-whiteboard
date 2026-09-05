@@ -34,12 +34,11 @@ function CreateNewBoardDialog() {
     }
     setLoading(true);
     const projectId = crypto.randomUUID();
-    const result = await axios.post("/api/projects", {
+    await axios.post("/api/projects", {
       projectName: workspaceName,
       projectId: projectId,
     });
 
-    console.log(result?.data);
     toast.add({
       type: "success",
       title: "New Workspace Created",

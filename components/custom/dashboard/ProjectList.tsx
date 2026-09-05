@@ -17,22 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { notifyBoardsChanged } from "./types";
+import { notifyBoardsChanged, type Project } from "./types";
 import { matchesQuery, useBoardSearch } from "@/context/BoardSearchContext";
-
-// Declared here rather than imported from a shared file so there is no extra
-// module for the TS server to resolve. ArchivedList.tsx has the same block.
-type Project = {
-  id: number;
-  projectId: string;
-  projectName: string;
-  userEmail: string;
-  createdAt: string;
-  archivedAt: string | null;
-  // leftJoin: both are null until the board has been saved at least once
-  previewImage: string | null;
-  updatedAt: string | null;
-};
 
 /** "Edited 2 hours ago", or a sensible fallback for a board never opened. */
 const editedLabel = (updatedAt: string | null) => {
@@ -162,9 +148,14 @@ function ProjectList() {
 
       toast.add({ type: "success", title: "Board renamed" });
       setRenameTarget(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Rename failed:", error);
-      toast.add({ type: "error", title: "Could not rename board" });
+      toast.add({
+        type: "error",
+        title: "Could not rename board",
+        // surface what the API actually said, so a 400 is not a mystery
+        description: error?.response?.data?.error ?? "Please try again.",
+      });
     } finally {
       setRenaming(false);
     }

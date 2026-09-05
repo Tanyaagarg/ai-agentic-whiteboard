@@ -1,24 +1,22 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 
+// Everything behind sign-in. /workspace was missing before, so an anonymous
+// visitor got the canvas shell and a wall of 401s from the API instead of the
+// sign-in page.
 const isProtectedRoute = createRouteMatcher([
-  "/dashboard/:path*",
   "/dashboard",
-])
+  "/dashboard/:path*",
+  "/workspace/:path*",
+]);
 
-const isClerkConfigured = 
-  !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
-  !!process.env.CLERK_SECRET_KEY;
-
-export default clerkMiddleware(async(auth,req)=>{
-  if(isProtectedRoute(req)) await auth.protect()
-})  ;
-
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) await auth.protect();
+});
 
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html|css|js|gif|svg|jpg|jpeg|png|woff|woff2|ico|csv|docx|xlsx|zip|webmanifest)).*)',
+    '/((?!_next|[^?]*\.(?:html|css|js|gif|svg|jpg|jpeg|png|woff|woff2|ico|csv|docx|xlsx|zip|webmanifest)).*)',
     // Always run for API routes
     '/(api|trpc)(.*)',
   ],

@@ -7,22 +7,8 @@ import Link from "next/link";
 import axios from "axios";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "@/components/ui/toast";
-import { notifyBoardsChanged } from "./types";
+import { notifyBoardsChanged, type Project } from "./types";
 import { matchesQuery, useBoardSearch } from "@/context/BoardSearchContext";
-
-// Declared here rather than imported from a shared file so there is no extra
-// module for the TS server to resolve. ProjectList.tsx has the same block.
-type Project = {
-  id: number;
-  projectId: string;
-  projectName: string;
-  userEmail: string;
-  createdAt: string;
-  archivedAt: string | null;
-  // leftJoin: both are null until the board has been saved at least once
-  previewImage: string | null;
-  updatedAt: string | null;
-};
 
 const archivedLabel = (archivedAt: string | null) => {
   if (!archivedAt) return "Archived";

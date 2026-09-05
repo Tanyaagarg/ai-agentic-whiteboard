@@ -16,7 +16,7 @@ function WorkspaceHeader({ onExport, onSave, projectName }: Props) {
     <div className="p-3 border-b flex justify-between items-center">
       <Link href={"/dashboard"}>
         <div className="flex gap-2 items-center">
-          <Image src={"/logo.svg"} alt="logo" width={35} height={35} />
+          <Image src={"/logo.svg"} alt="logo" width={42} height={28} />
           <h2>{projectName}</h2>
         </div>
       </Link>
