@@ -20,9 +20,12 @@ import {
   Type,
   Image as ImageIcon,
   Eraser,
+  Sparkles,
 } from "lucide-react";
 import FloatingProperties from "./FloatingProperties";
 import ToolProperties from "./ToolProperties";
+import { Button } from "@/components/ui/button";
+import AIFloatingSidebar from "./AIFloatingSidebar";
 
 const tools = [
   { name: "selection", icon: MousePointer2, color: "text-blue-600" },
@@ -46,6 +49,7 @@ function Whiteboard() {
   const [activeTool, setActiveTool] = useState("selection");
   const [selectedElement, setSelectedElement] = useState<any>(null);
   const [canvasState, setCanvasState] = useState<any>(null);
+  const [ShowAiSidebar, setShowAiSidebar] = useState(true);
 
   useEffect(() => {
     return () => {
@@ -134,17 +138,17 @@ function Whiteboard() {
     excalidrawAPI.updateScene({ elements: updatedElements });
   };
 
- /** Set defaults for the NEXT element drawn with the active tool */
-const handleToolPropertyChange = (property: string, value: any) => {
-  if (!excalidrawAPI) return;
+  /** Set defaults for the NEXT element drawn with the active tool */
+  const handleToolPropertyChange = (property: string, value: any) => {
+    if (!excalidrawAPI) return;
 
-  excalidrawAPI.updateScene({
-    appState: {
-      ...excalidrawAPI.getAppState(),
-      [property]: value,
-    },
-  });
-};
+    excalidrawAPI.updateScene({
+      appState: {
+        ...excalidrawAPI.getAppState(),
+        [property]: value,
+      },
+    });
+  };
 
   const getFloatingPosition = () => {
     if (!selectedElement || !canvasState) {
@@ -211,6 +215,14 @@ const handleToolPropertyChange = (property: string, value: any) => {
         excalidrawAPI={excalidrawAPI}
         onPropertyChange={handlePropertyChange}
       />
+
+      <div className="absolute right-15 bottom-3 z-50">
+        <Button size={"lg"} onClick={()=>setShowAiSidebar(!ShowAiSidebar)}>
+          <Sparkles /> AI
+        </Button>
+      </div>
+
+      {ShowAiSidebar && <AIFloatingSidebar excalidrawApi={excalidrawAPI}/>}
     </div>
   );
 }
