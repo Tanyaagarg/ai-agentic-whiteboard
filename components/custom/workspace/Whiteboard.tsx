@@ -41,7 +41,11 @@ const tools = [
   { name: "eraser", icon: Eraser, color: "text-rose-500" },
 ];
 
-function Whiteboard() {
+type Props = {
+  onApiReady: (api: ExcalidrawImperativeAPI) => void;
+};
+
+function Whiteboard({ onApiReady }: Props) {
   const [excalidrawAPI, setExcalidrawAPI] =
     useState<ExcalidrawImperativeAPI | null>(null);
   const saveTimeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -176,8 +180,16 @@ function Whiteboard() {
   return (
     <div className="relative" style={{ height: "90vh" }}>
       <Excalidraw
-        excalidrawAPI={(api) => setExcalidrawAPI(api)}
+        excalidrawAPI={(api) => {
+          setExcalidrawAPI(api);
+          onApiReady(api);
+        }}
         onChange={handleCanvasChange}
+        initialData={{
+          appState: {
+            currentItemRoughness: 0,
+          },
+        }}
       />
 
       {/* LEFT TOOLBAR */}
@@ -222,7 +234,12 @@ function Whiteboard() {
         </Button>
       </div>
 
-      {ShowAiSidebar && <AIFloatingSidebar excalidrawApi={excalidrawAPI}/>}
+      {ShowAiSidebar && (
+        <AIFloatingSidebar
+          excalidrawApi={excalidrawAPI}
+          onClose={() => setShowAiSidebar(false)}
+        />
+      )}
     </div>
   );
 }

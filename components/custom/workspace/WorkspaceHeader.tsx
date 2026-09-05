@@ -3,22 +3,23 @@ import Image from "next/image";
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Save, Share } from "lucide-react";
+import { DownloadIcon, Save, Share } from "lucide-react";
 
 type Props = {
-  selectedTab: any
+  selectedTab: any,
+  onExport: any
 }
 
-function WorkspaceHeader({ selectedTab }: Props) {
+function WorkspaceHeader({ selectedTab, onExport }: Props) {
   return (
-    <div className="p-3 border-b flex justify-between">
+    <div className="p-3 border-b flex justify-between items-center">
       <div className="flex gap-2 items-center">
         <Image src={"/logo.svg"} alt="logo" width={35} height={35} />
         <h2>Workspace Name</h2>
       </div>
       {/* Switch */}
       <div>
-        <Tabs defaultValue="whiteboard" 
+        <Tabs defaultValue="whiteboard"
         onValueChange={(value) => selectedTab(value)}>
           <TabsList>
             <TabsTrigger value="whiteboard">Whiteboard</TabsTrigger>
@@ -31,6 +32,7 @@ function WorkspaceHeader({ selectedTab }: Props) {
       <div className="flex gap-2">
         <Button><Save/>Save</Button>
         <Button variant={"outline"}><Share/>Share</Button>
+        <Button onClick={onExport}><DownloadIcon/>Export</Button>
       </div>
     </div>
   );
