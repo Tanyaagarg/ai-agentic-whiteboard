@@ -14,6 +14,7 @@ import {
   Diamond,
   Droplet,
   GripVertical,
+  ImageIcon,
   Lock,
   Minus,
   MoreHorizontal,
@@ -92,6 +93,13 @@ const TYPE_ICONS: Record<string, any> = {
   line: Minus,
   arrow: ArrowRight,
   freedraw: Pencil,
+  image: ImageIcon,
+};
+
+/** Emoji come in as text elements, but colour and font controls ruin them. */
+const isEmojiOnly = (text: string) => {
+  if (!text) return false;
+  return /^[\p{Extended_Pictographic}\p{Emoji_Component}\s]+$/u.test(text);
 };
 
 function FloatingProperties({
@@ -142,7 +150,13 @@ function FloatingProperties({
   const isLine = type === "line";
   const isArrow = type === "arrow";
   const isFreeDraw = type === "freedraw";
+  const isImage = type === "image";
   const isLinear = isLine || isArrow;
+
+  // an inserted icon or emoji: only size, opacity, layers and the
+  // duplicate/lock/delete actions do anything useful to it
+  const isEmoji = type === "text" && isEmojiOnly(selectedElement.text ?? "");
+  const isMedia = isImage || isEmoji;
 
   const TypeIcon = TYPE_ICONS[type] ?? Square;
 
@@ -202,13 +216,15 @@ function FloatingProperties({
           <TypeIcon size={17} className="text-gray-700" />
         </div>
 
-        <IconButton
-          title="Stroke color"
-          active={openPopover === "stroke"}
-          onClick={() => toggle("stroke")}
-        >
-          <Palette size={17} className="text-gray-700" />
-        </IconButton>
+        {!isMedia && (
+          <IconButton
+            title="Stroke color"
+            active={openPopover === "stroke"}
+            onClick={() => toggle("stroke")}
+          >
+            <Palette size={17} className="text-gray-700" />
+          </IconButton>
+        )}
 
         {isShape && (
           <IconButton
@@ -220,7 +236,7 @@ function FloatingProperties({
           </IconButton>
         )}
 
-        {isText && (
+        {isText && !isEmoji && (
           <IconButton
             title="Text options"
             active={openPopover === "text"}
@@ -368,7 +384,11 @@ function FloatingProperties({
       {openPopover === "more" && (
         <Popover className="max-h-[65vh] w-64 overflow-y-auto">
           <PopoverTitle onClose={() => setOpenPopover(null)}>
-            {isText
+            {isMedia
+              ? isEmoji
+                ? "Emoji options"
+                : "Icon options"
+              : isText
               ? "Text options"
               : isShape
                 ? "Shape options"
@@ -400,7 +420,7 @@ function FloatingProperties({
           </div>
 
           {/* STROKE STYLE + WIDTH */}
-          {!isText && (
+          {!isText && !isMedia && (
             <>
               <Label>Stroke</Label>
               {!isFreeDraw && (

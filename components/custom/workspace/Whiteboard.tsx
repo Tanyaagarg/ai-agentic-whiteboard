@@ -26,6 +26,7 @@ import FloatingProperties from "./FloatingProperties";
 import ToolProperties from "./ToolProperties";
 import { Button } from "@/components/ui/button";
 import AIFloatingSidebar from "./AIFloatingSidebar";
+import BottomToolbar from "./Bottomtoolbar";
 
 const tools = [
   { name: "selection", icon: MousePointer2, color: "text-blue-600" },
@@ -53,7 +54,7 @@ function Whiteboard({ onApiReady }: Props) {
   const [activeTool, setActiveTool] = useState("selection");
   const [selectedElement, setSelectedElement] = useState<any>(null);
   const [canvasState, setCanvasState] = useState<any>(null);
-  const [ShowAiSidebar, setShowAiSidebar] = useState(true);
+  const [ShowAiSidebar, setShowAiSidebar] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -67,12 +68,14 @@ function Whiteboard({ onApiReady }: Props) {
     files: any,
   ) => {
     try {
-      await axios.post("/api/whiteboard", {
+      const result = await axios.post("/api/whiteboard", {
         elements,
         appState,
         files,
         projectId: projectid,
       });
+
+      console.log("Autosaved:", result.data);
     } catch (error) {
       console.error("Autosave failed:", error);
       toast.add({ title: "Save failed", type: "error" });
@@ -108,9 +111,10 @@ function Whiteboard({ onApiReady }: Props) {
     }
 
     const snapshot = [...elements];
+    // 10s was long enough to lose work on a quick refresh
     saveTimeRef.current = setTimeout(() => {
       saveCanvasChanges(snapshot, appState, files);
-    }, 10000);
+    }, 2000);
   };
 
   const changeTool = (tool: string) => {
@@ -228,11 +232,11 @@ function Whiteboard({ onApiReady }: Props) {
         onPropertyChange={handlePropertyChange}
       />
 
-      <div className="absolute right-15 bottom-3 z-50">
-        <Button size={"lg"} onClick={()=>setShowAiSidebar(!ShowAiSidebar)}>
-          <Sparkles /> AI
-        </Button>
-      </div>
+      <BottomToolbar
+        excalidrawApi={excalidrawAPI}
+        aiOpen={ShowAiSidebar}
+        onToggleAi={() => setShowAiSidebar(!ShowAiSidebar)}
+      />
 
       {ShowAiSidebar && (
         <AIFloatingSidebar
