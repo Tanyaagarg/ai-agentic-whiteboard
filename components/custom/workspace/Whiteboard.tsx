@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { Excalidraw } from "@excalidraw/excalidraw";
+import { Excalidraw, exportToBlob } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import { useParams } from "next/navigation";
 import axios from "axios";
@@ -42,6 +42,19 @@ const tools = [
   { name: "eraser", icon: Eraser, color: "text-rose-500" },
 ];
 
+/** Largest box a dashboard thumbnail is allowed to occupy. */
+const PREVIEW_MAX_WIDTH = 400;
+const PREVIEW_MAX_HEIGHT = 300;
+
+/** FileReader gives us the "data:image/webp;base64,..." string we store in Postgres. */
+const blobToBase64 = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
 type Props = {
   onApiReady: (api: ExcalidrawImperativeAPI) => void;
 };
@@ -62,17 +75,79 @@ function Whiteboard({ onApiReady }: Props) {
     };
   }, []);
 
+  /**
+   * Render the whole canvas down to a small webp and return it as a base64
+   * data URL. Returns null when there is nothing worth showing, in which case
+   * the API leaves any existing thumbnail alone.
+   */
+  const generatePreviewBase64 = async (): Promise<string | null> => {
+    if (!excalidrawAPI) return null;
+
+    const elements = excalidrawAPI
+      .getSceneElements()
+      .filter((el: any) => !el.isDeleted);
+
+    if (!elements.length) return null;
+
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    try {
+      const blob = await exportToBlob({
+        elements,
+        appState: {
+          ...appState,
+          exportBackground: true,
+          exportWithDarkMode: false,
+        },
+        files,
+        mimeType: "image/webp",
+        quality: 0.5,
+        exportPadding: 10,
+        /**
+         * Excalidraw passes in the drawing's real bounding-box size and wants
+         * back the canvas size AND the scale to draw at. Returning a fixed
+         * size with scale 1 crops to the top-left corner instead of shrinking
+         * the board — that is what produced zoomed-in thumbnails. Scaling both
+         * together fits the entire drawing into the frame.
+         */
+        getDimensions: (width: number, height: number) => {
+          const scale = Math.min(
+            PREVIEW_MAX_WIDTH / width,
+            PREVIEW_MAX_HEIGHT / height,
+            1, // never blow a tiny sketch up past 1:1
+          );
+
+          return {
+            width: Math.round(width * scale),
+            height: Math.round(height * scale),
+            scale,
+          };
+        },
+      });
+
+      return await blobToBase64(blob);
+    } catch (error) {
+      // A broken thumbnail must never block the actual save.
+      console.error("Preview generation failed:", error);
+      return null;
+    }
+  };
+
   const saveCanvasChanges = async (
     elements: readonly any[],
     appState: any,
     files: any,
   ) => {
     try {
+      const previewImage = await generatePreviewBase64();
+
       const result = await axios.post("/api/whiteboard", {
         elements,
         appState,
         files,
         projectId: projectid,
+        previewImage,
       });
 
       console.log("Autosaved:", result.data);

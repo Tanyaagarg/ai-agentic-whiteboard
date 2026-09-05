@@ -8,25 +8,60 @@ import {
   SidebarHeader,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import {
-  Archive,
-  Files,
-  LayoutGrid,
-  Settings,
-  Sparkle,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import Link from "next/link";
+import { Archive, LayoutGrid, LogOut, UserCog } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { Progress } from "@/components/ui/progress";
-import { useUser } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
+import axios from "axios";
+import { useCallback, useEffect, useState } from "react";
 import CreateNewBoardDialog from "./CreateNewBoardDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BOARDS_CHANGED } from "./types";
+
+// Paths live under /dashboard because that layout provides the sidebar.
+// The old isActive checks pointed at "/archived" and "/shared-files", which
+// never matched anything, so nothing ever highlighted.
+const boardLinks = [
+  { title: "All Files", path: "/dashboard", icon: LayoutGrid },
+  { title: "Archived", path: "/dashboard/archived", icon: Archive },
+];
 
 export function AppSidebar() {
   const path = usePathname();
-  const {user} = useUser();
+  const { user } = useUser();
+  // Clerk's own <UserButton /> used to sit in the dashboard header. It is gone,
+  // so this card is now the only way to reach the account — it has to offer
+  // sign out as well, or there would be no way out of the app.
+  const { openUserProfile, signOut } = useClerk();
+  // null while the first request is in flight, so we can show "—" instead of
+  // flashing a wrong "0 boards".
+  const [boardCount, setBoardCount] = useState<number | null>(null);
+
+  const loadBoardCount = useCallback(async () => {
+    try {
+      const result = await axios.get("/api/projects");
+      setBoardCount(Array.isArray(result.data) ? result.data.length : 0);
+    } catch (error) {
+      console.error("Failed to load board count:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadBoardCount();
+
+    // The lists archive/restore/delete by editing their own local state rather
+    // than refetching, so without this the count would drift from the grid
+    // sitting right next to it.
+    window.addEventListener(BOARDS_CHANGED, loadBoardCount);
+    return () => window.removeEventListener(BOARDS_CHANGED, loadBoardCount);
+  }, [loadBoardCount]);
 
   return (
     <Sidebar>
@@ -38,67 +73,86 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
+        {/*
+          CreateNewBoardDialog already renders its own <Button>. Wrapping it in
+          another <Button> made a button inside a button inside a trigger —
+          invalid HTML, and the click never landed.
+        */}
         <SidebarGroup className="px-3">
-          <Button className="w-full rounded-xl bg-primary font-semibold text-primary-foreground shadow-card hover:bg-primary/90">
-            <CreateNewBoardDialog/>
-          </Button>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>My Boards</SidebarGroupLabel>
-          <SidebarMenuButton className="p-5" isActive={path === "/dashboard"}>
-            <LayoutGrid />
-            <span>All Files</span>
-          </SidebarMenuButton>
-          <SidebarMenuButton
-            className="p-5 mt-2"
-            isActive={path === "/shared-files"}
-          >
-            <Users />
-            <span>Shared</span>
-          </SidebarMenuButton>
-          <SidebarMenuButton
-            className="p-5 mt-2"
-            isActive={path === "/archived"}
-          >
-            <Archive />
-            <span>Archived</span>
-          </SidebarMenuButton>
+          <CreateNewBoardDialog />
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Others</SidebarGroupLabel>
-          <SidebarMenuButton className="p-5" isActive={path === "/ai"}>
-            <Sparkles />
-            <span>Ai Helper</span>
-          </SidebarMenuButton>
-          <SidebarMenuButton
-            className="p-5 mt-2"
-            isActive={path === "/settings"}
-          >
-            <Settings />
-            <span>Settings</span>
-          </SidebarMenuButton>
+          <SidebarGroupLabel>My Boards</SidebarGroupLabel>
+          {boardLinks.map((item) => (
+            // Base UI takes `render`, not Radix's `asChild`
+            <SidebarMenuButton
+              key={item.path}
+              className="mt-2 p-5"
+              isActive={path === item.path}
+              render={<Link href={item.path} />}
+            >
+              <item.icon />
+              <span>{item.title}</span>
+            </SidebarMenuButton>
+          ))}
         </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>
-        <Button className="w-full rounded-xl bg-primary font-semibold text-primary-foreground shadow-card hover:bg-primary/90">
-          <CreateNewBoardDialog/>
-        </Button>
-        <div className="p-4 my-3 border rounded-md">
-            <h2 className="text-sm flex justify-between mb-1">
-                2 files created <span>Total 3</span>
-            </h2>
-            <Progress value={66} className="h-2 mt-2"/>
+        <div className="my-3 rounded-md border p-4">
+          <h2 className="text-sm">
+            {boardCount === null
+              ? "— boards"
+              : `${boardCount} ${boardCount === 1 ? "board" : "boards"} created`}
+          </h2>
         </div>
 
-        <div className="flex items-center gap-2 p-4 border rounded-md">
-            <Image src={user?.imageUrl ?? ''} alt="User Image" width={40} height={40} className="rounded-full"/>
+        <DropdownMenu>
+          {/* Base UI takes `render`, not Radix's `asChild` */}
+          <DropdownMenuTrigger
+            render={
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded-md border p-4 text-left transition-colors hover:bg-accent"
+              />
+            }
+          >
+            {user?.imageUrl && (
+              <Image
+                src={user.imageUrl}
+                alt="User Image"
+                width={40}
+                height={40}
+                className="rounded-full"
+              />
+            )}
             <h2>
-                {user?.firstName}{user?.lastName}
+              {user?.firstName} {user?.lastName}
             </h2>
-        </div>
+          </DropdownMenuTrigger>
 
+          {/* opens upward — the card sits at the bottom of the sidebar */}
+          <DropdownMenuContent side="top" align="start" sideOffset={8}>
+            {/* a plain div, not DropdownMenuLabel — Base UI's GroupLabel
+                throws unless it sits inside a <Menu.Group> */}
+            <div className="truncate px-2 py-1.5 text-xs font-medium text-muted-foreground">
+              {user?.primaryEmailAddress?.emailAddress}
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => openUserProfile()}>
+              <UserCog />
+              Manage account
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => signOut({ redirectUrl: "/" })}
+            >
+              <LogOut />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   );

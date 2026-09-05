@@ -1,5 +1,4 @@
 "use client";
-import SmartDoc from "@/components/custom/workspace/SmartDoc";
 import Whiteboard from "@/components/custom/workspace/Whiteboard";
 import WorkspaceHeader from "@/components/custom/workspace/WorkspaceHeader";
 import { exportToBlob } from "@excalidraw/excalidraw";
@@ -31,7 +30,6 @@ const normalizeAppState = (appState: any) => {
 };
 
 function Workspace() {
-  const [activeTab, setActiveTab] = useState("whiteboard");
   const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);
   const [projectName, setProjectName] = useState("");
   const { projectid } = useParams<{ projectid: string }>();
@@ -111,17 +109,12 @@ function Workspace() {
   return (
     <div>
       <WorkspaceHeader
-        selectedTab={(value: string) => setActiveTab(value)}
         onExport={() => handleExportImage()}
         onSave={() => handleSave()}
         projectName={projectName}
       />
 
-      {activeTab == "whiteboard" ? (
-        <Whiteboard onApiReady={(api) => setApi(api)} />
-      ) : (
-        <SmartDoc />
-      )}
+      <Whiteboard onApiReady={(api) => setApi(api)} />
     </div>
   );
 }
